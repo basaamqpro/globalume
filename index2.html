@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>News API Test</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .article {
+            border-bottom: 1px solid #ccc;
+            padding: 20px 0;
+        }
+
+        .article img {
+            width: 250px;
+            max-width: 100%;
+        }
+
+        #status {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Hello NewsData API 👋</h1>
+
+    <p id="status">Loading news...</p>
+
+    <div id="news"></div>
+
+    <script>
+
+        // TEMPORARY TEST ONLY
+        const API_KEY = "pub_b7bf7a4350db4cacb56c2ec236b1a963";
+
+        const query = 'China AND Energy AND Pakistan';
+
+const params = new URLSearchParams({
+    apikey: API_KEY,
+    qInTitle: query,
+    language: "en",
+    removeduplicate: "1"
+});
+
+        const url =
+            `https://newsdata.io/api/1/latest?${params}`;
+
+
+        function shortenText(text, maxLength = 250) {
+
+            if (!text) {
+                return "No description available.";
+            }
+
+            if (text.length <= maxLength) {
+                return text;
+            }
+
+            return text.slice(0, maxLength) + "...";
+        }
+
+
+        async function getNews() {
+
+            const status = document.getElementById("status");
+            const newsContainer = document.getElementById("news");
+
+            try {
+
+                const response = await fetch(url);
+
+                const data = await response.json();
+
+                console.log(data);
+
+                if (data.status !== "success") {
+
+                    status.textContent = "API request failed.";
+
+                    console.log(data);
+
+                    return;
+                }
+
+                status.textContent =
+                    `Success! Received ${data.results.length} articles.`;
+
+                data.results.forEach(article => {
+
+                    const articleDiv =
+                        document.createElement("div");
+
+                    articleDiv.className = "article";
+
+                    articleDiv.innerHTML = `
+
+                        <h2>
+                            ${article.title}
+                        </h2>
+
+                        ${
+                            article.image_url
+                                ? `<img src="${article.image_url}" alt="">`
+                                : ""
+                        }
+
+                        <p>
+                            ${shortenText(article.description)}
+                        </p>
+
+                        <p>
+                            <strong>Source:</strong>
+                            ${article.source_name || "Unknown"}
+                        </p>
+
+                        <a
+                            href="${article.link}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Read full article
+                        </a>
+                    `;
+
+                    newsContainer.appendChild(articleDiv);
+
+                });
+
+            }
+
+            catch (error) {
+
+                status.textContent = "Something went wrong.";
+
+                console.error(error);
+
+            }
+        }
+
+
+        getNews();
+
+    </script>
+
+</body>
+</html>

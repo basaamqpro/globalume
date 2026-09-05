@@ -1,150 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>News API Test</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        .article {
-            border-bottom: 1px solid #ccc;
-            padding: 20px 0;
-        }
-
-        .article img {
-            width: 250px;
-            max-width: 100%;
-        }
-
-        #status {
-            font-weight: bold;
-        }
-    </style>
+    <title>Globalume News Test</title>
 </head>
 
 <body>
 
-    <h1>Hello NewsData API 👋</h1>
+    <h1>Hello Globalume 👋</h1>
 
-    <p id="status">Loading news...</p>
+    <p id="status">
+        Loading news...
+    </p>
 
     <div id="news"></div>
 
+
     <script>
-
-        // TEMPORARY TEST ONLY
-        const API_KEY = "pub_b7bf7a4350db4cacb56c2ec236b1a963";
-
-        const query = 'China AND Energy AND Pakistan';
-
-const params = new URLSearchParams({
-    apikey: API_KEY,
-    qInTitle: query,
-    language: "en",
-    removeduplicate: "1"
-});
-
-        const url =
-            `https://newsdata.io/api/1/latest?${params}`;
-
-
-        function shortenText(text, maxLength = 250) {
-
-            if (!text) {
-                return "No description available.";
-            }
-
-            if (text.length <= maxLength) {
-                return text;
-            }
-
-            return text.slice(0, maxLength) + "...";
-        }
-
 
         async function getNews() {
 
-            const status = document.getElementById("status");
-            const newsContainer = document.getElementById("news");
-
             try {
 
-                const response = await fetch(url);
+                const response = await fetch("/api/news");
 
                 const data = await response.json();
 
                 console.log(data);
 
-                if (data.status !== "success") {
+                const articles =
+                    data.news_results || [];
 
-                    status.textContent = "API request failed.";
 
-                    console.log(data);
+                document.getElementById("status")
+                    .textContent =
+                    `Received ${articles.length} articles`;
 
-                    return;
-                }
 
-                status.textContent =
-                    `Success! Received ${data.results.length} articles.`;
+                const news =
+                    document.getElementById("news");
 
-                data.results.forEach(article => {
 
-                    const articleDiv =
-                        document.createElement("div");
+                articles.forEach(article => {
 
-                    articleDiv.className = "article";
-
-                    articleDiv.innerHTML = `
+                    news.innerHTML += `
+                        <hr>
 
                         <h2>
                             ${article.title}
                         </h2>
 
-                        ${
-                            article.image_url
-                                ? `<img src="${article.image_url}" alt="">`
-                                : ""
-                        }
-
                         <p>
-                            ${shortenText(article.description)}
-                        </p>
-
-                        <p>
-                            <strong>Source:</strong>
-                            ${article.source_name || "Unknown"}
+                            ${article.source?.name || ""}
                         </p>
 
                         <a
                             href="${article.link}"
                             target="_blank"
-                            rel="noopener noreferrer"
                         >
-                            Read full article
+                            Read article
                         </a>
                     `;
 
-                    newsContainer.appendChild(articleDiv);
-
                 });
 
-            }
+            } catch (error) {
 
-            catch (error) {
-
-                status.textContent = "Something went wrong.";
-
-                console.error(error);
+                document.getElementById("status")
+                    .textContent =
+                    "Error: " + error.message;
 
             }
+
         }
 
 
@@ -153,4 +87,5 @@ const params = new URLSearchParams({
     </script>
 
 </body>
+
 </html>
