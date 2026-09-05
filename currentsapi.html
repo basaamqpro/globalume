@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Currents API Test</title>
+</head>
+
+<body>
+
+    <h1>Hello Currents API 👋</h1>
+
+    <h2>China + Pakistan + Energy</h2>
+
+    <div id="results">Loading...</div>
+
+    <script>
+
+        const API_KEY = "xrPizHcdT5vUqhFXVhKLy9uEQGBmRCUwaAcyABh_jHsp9Xx5";
+
+        const query = "China AND Pakistan AND energy";
+
+        const params = new URLSearchParams({
+            query: query,
+            language: "en",
+            page_size: "100"
+        });
+
+        const url =
+            `https://api.currentsapi.services/v1/search?${params}`;
+
+        fetch(url, {
+            headers: {
+                Authorization: `Bearer ${API_KEY}`
+            }
+        })
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            console.log("API response:", data);
+
+            const results = document.getElementById("results");
+
+            // STRICT TITLE FILTER
+            const matchingArticles = data.news.filter(article => {
+
+                const title = article.title.toLowerCase();
+
+                return (
+                    title.includes("china") &&
+                    title.includes("pakistan") &&
+                    title.includes("energy")
+                );
+
+            });
+
+
+            // No matching headlines
+            if (matchingArticles.length === 0) {
+
+                results.innerHTML =
+                    "<p>No headlines found containing China + Pakistan + Energy.</p>";
+
+                return;
+            }
+
+
+            // Show matching headlines
+            results.innerHTML = "";
+
+            matchingArticles.forEach(article => {
+
+                results.innerHTML += `
+                    <h3>${article.title}</h3>
+
+                    <p>${article.description || ""}</p>
+
+                    <a href="${article.url}" target="_blank">
+                        Read article
+                    </a>
+
+                    <hr>
+                `;
+
+            });
+
+        })
+
+        .catch(error => {
+
+            document.getElementById("results").innerText =
+                "Error: " + error;
+
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>News API Test</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .article {
+            border-bottom: 1px solid #ccc;
+            padding: 20px 0;
+        }
+
+        .article img {
+            width: 250px;
+            max-width: 100%;
+        }
+
+        #status {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Hello NewsData API 👋</h1>
+
+    <p id="status">Loading news...</p>
+
+    <div id="news"></div>
+
+    <script>
+const { getJson } = require("serpapi");
+
+getJson({
+  engine: "google_news_light",
+  q: "china pakistan energy",
+  api_key: "6832c1bead388d77f8f64eda169ba74198306a6f3e5a6cdaf35561be907b4e6d"
+}, (json) => {
+  console.log(json["news_results"]);
+});
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NewsAPI Hello World</title>
+</head>
+
+<body>
+
+    <h1>Hello NewsAPI 👋</h1>
+
+    <button id="testBtn">Test API</button>
+
+    <p id="result">Waiting...</p>
+
+    <script>
+        const API_KEY = "c52a50bc177147338c4bf153b238d8e8";
+
+        const button = document.getElementById("testBtn");
+        const result = document.getElementById("result");
+
+        button.addEventListener("click", async () => {
+
+            const url =
+                `https://newsapi.org/v2/everything?q=China&apiKey=${API_KEY}`;
+
+            try {
+
+                const response = await fetch(url);
+
+                const data = await response.json();
+
+                console.log(data);
+
+                if (data.status === "ok") {
+
+                    result.textContent =
+                        `Success! Found ${data.totalResults} articles.`;
+
+                } else {
+
+                    result.textContent =
+                        `Error: ${data.message}`;
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                result.textContent = "Something went wrong.";
+            }
+
+        });
+    </script>
+
+</body>
+</html>
