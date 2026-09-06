@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Globalume</title>
+
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+
+        /* MAP */
+
+        #map {
+            width: 100%;
+            height: 450px;
+            background: #eee;
+            margin-bottom: 20px;
+        }
+
+
+        /* COUNTRIES */
+
+        #countries {
+            padding: 15px;
+            background: #f5f5f5;
+            margin-bottom: 30px;
+        }
+
+
+        /* TOPICS */
+
+        #topics {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+
+        #topics p {
+            cursor: pointer;
+            padding: 10px 15px;
+            background: #eee;
+            margin: 0;
+        }
+
+
+        #topics p:hover {
+            background: #ddd;
+        }
+
+
+        /* NEWS */
+
+        #status {
+            font-weight: bold;
+        }
+
+
+        .article {
+            border-bottom: 1px solid #ccc;
+            padding: 20px 0;
+        }
+
+
+        .article img {
+            width: 300px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <h1>Globalume</h1>
+
+
+
+    <!-- =========================
+         GOOGLE MAP
+         ========================= -->
+
+    <h2>Select Countries</h2>
+
+    <p>
+        Click one or two countries on the map.
+    </p>
+
+    <div id="map"></div>
+
+
+
+    <!-- =========================
+         SELECTED COUNTRIES
+         ========================= -->
+
+    <h2>Countries</h2>
+
+    <div id="countries">
+        No countries selected
+    </div>
+
+
+
+    <!-- =========================
+         TOPICS
+         ========================= -->
+
+    <h2>Topics</h2>
+
+
+    <div id="topics">
+
+        <p onclick="getNews('security')">
+            Security
+        </p>
+
+        <p onclick="getNews('politics')">
+            Politics
+        </p>
+
+        <p onclick="getNews('economy')">
+            Economy
+        </p>
+
+        <p onclick="getNews('trade')">
+            Trade
+        </p>
+
+        <p onclick="getNews('technology')">
+            Technology
+        </p>
+
+        <p onclick="getNews('health')">
+            Health
+        </p>
+
+        <p onclick="getNews('energy')">
+            Energy
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         NEWS RESULTS
+         ========================= -->
+
+    <h2>News</h2>
+
+
+    <p id="status">
+
+        Select countries and a topic
+
+    </p>
+
+
+    <div id="news"></div>
+
+
+
+    <script>
+
+
+        /* =========================
+           SELECTED COUNTRIES
+           ========================= */
+
+
+        let selectedCountries = [];
+
+
+
+        function selectCountry(country) {
+
+
+            /*
+                Don't add the same
+                country twice
+            */
+
+            if (
+                selectedCountries.includes(country)
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+                Maximum 2 countries
+            */
+
+            if (
+                selectedCountries.length === 2
+            ) {
+
+                selectedCountries.shift();
+
+            }
+
+
+            selectedCountries.push(country);
+
+
+            showCountries();
+
+        }
+
+
+
+        function showCountries() {
+
+
+            const countries =
+                document.getElementById(
+                    "countries"
+                );
+
+
+            if (
+                selectedCountries.length === 0
+            ) {
+
+                countries.textContent =
+                    "No countries selected";
+
+                return;
+
+            }
+
+
+            countries.textContent =
+                selectedCountries.join(" + ");
+
+        }
+
+
+
+        /* =========================
+           GOOGLE MAP
+           ========================= */
+
+
+        let map;
+        let geocoder;
+
+
+
+        async function initMap() {
+
+
+            /*
+                Create map
+            */
+
+            map =
+                new google.maps.Map(
+                    document.getElementById("map"),
+                    {
+
+                        center: {
+                            lat: 20,
+                            lng: 0
+                        },
+
+                        zoom: 2
+
+                    }
+                );
+
+
+            /*
+                Geocoder finds which
+                country was clicked
+            */
+
+            geocoder =
+                new google.maps.Geocoder();
+
+
+
+            /*
+                Listen for clicks
+                on the map
+            */
+
+            map.addListener(
+                "click",
+                async function(event) {
+
+
+                    try {
+
+
+                        const response =
+                            await geocoder.geocode({
+
+                                location:
+                                    event.latLng
+
+                            });
+
+
+
+                        let country = null;
+
+
+
+                        /*
+                            Search returned address
+                            information for country
+                        */
+
+                        for (
+                            const result
+                            of response.results
+                        ) {
+
+
+                            const countryComponent =
+                                result.address_components.find(
+
+                                    component =>
+                                        component.types.includes(
+                                            "country"
+                                        )
+
+                                );
+
+
+                            if (countryComponent) {
+
+                                country =
+                                    countryComponent.long_name;
+
+                                break;
+
+                            }
+
+                        }
+
+
+
+                        /*
+                            Country found
+                        */
+
+                        if (country) {
+
+
+                            console.log(
+                                "Selected country:",
+                                country
+                            );
+
+
+                            selectCountry(
+                                country
+                            );
+
+
+                        } else {
+
+
+                            console.log(
+                                "No country found"
+                            );
+
+
+                        }
+
+
+                    } catch (error) {
+
+
+                        console.error(
+                            "Map error:",
+                            error
+                        );
+
+
+                    }
+
+
+                }
+            );
+
+
+        }
+
+
+
+        /* =========================
+           NEWS
+           ========================= */
+
+
+        async function getNews(topic) {
+
+
+            if (
+                selectedCountries.length === 0
+            ) {
+
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "Please select a country first";
+
+
+                return;
+
+            }
+
+
+
+            const status =
+                document.getElementById(
+                    "status"
+                );
+
+
+            const news =
+                document.getElementById(
+                    "news"
+                );
+
+
+
+            status.textContent =
+                "Loading news...";
+
+
+            news.innerHTML =
+                "";
+
+
+
+            try {
+
+
+                const countries =
+                    selectedCountries.join(",");
+
+
+
+                const response =
+                    await fetch(
+
+                        `/api/news?countries=${encodeURIComponent(countries)}&topic=${encodeURIComponent(topic)}`
+
+                    );
+
+
+
+                const data =
+                    await response.json();
+
+
+
+                console.log(data);
+
+
+
+                const articles =
+                    data.news_results || [];
+
+
+
+                status.textContent =
+                    `Found ${articles.length} articles`;
+
+
+
+                articles.forEach(
+                    article => {
+
+
+                        news.innerHTML += `
+
+                            <div class="article">
+
+
+                                ${
+                                    article.thumbnail
+                                    ? `
+                                        <img
+                                            src="${article.thumbnail}"
+                                            alt="${article.title}"
+                                        >
+                                    `
+                                    : ""
+                                }
+
+
+                                <h2>
+                                    ${article.title}
+                                </h2>
+
+
+                                <p>
+                                    ${article.source || ""}
+                                </p>
+
+
+                                <p>
+                                    ${article.date || ""}
+                                </p>
+
+
+                                <p>
+                                    ${article.snippet || ""}
+                                </p>
+
+
+                                <a
+                                    href="${article.link}"
+                                    target="_blank"
+                                >
+                                    Read article
+                                </a>
+
+
+                            </div>
+
+                        `;
+
+
+                    }
+                );
+
+
+            } catch (error) {
+
+
+                status.textContent =
+                    "Error: " +
+                    error.message;
+
+
+            }
+
+
+        }
+
+
+    </script>
+
+
+
+    <!-- =========================
+         GOOGLE MAPS API
+         ========================= -->
+
+
+    <script
+        async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4kWYu9n7sW-if714qh1iRjgEZo1l_28Q&loading=async&callback=initMap">
+    </script>
+
+
+</body>
+
+</html>

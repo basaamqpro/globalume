@@ -9,82 +9,1836 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Globalume News Test</title>
+    <meta
+        name="description"
+        content="Globalume lets you explore news by country and topic."
+    >
+
+    <title>Globalume</title>
+
+    <!-- We will create this file next -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Vercel Analytics -->
+
+<script>
+    window.va =
+        window.va ||
+        function () {
+            (
+                window.vaq =
+                window.vaq || []
+            ).push(arguments);
+        };
+</script>
+
+<script
+    defer
+    src="/_vercel/insights/script.js"
+></script>
 </head>
+
 
 <body>
 
-    <h1>Hello Globalume 👋</h1>
+    <!-- =========================
+         HEADER
+         ========================= -->
 
-    <p id="status">
-        Loading news...
-    </p>
+    <header class="site-header">
+        <h1>Globalume</h1>
 
-    <div id="news"></div>
+        <p>
+            Select one or two countries, choose a topic,
+            and explore related news.
+        </p>
+    </header>
+
+
+    <main>
+
+        <!-- =========================
+             MAP
+             ========================= -->
+
+        <section class="map-section">
+
+            <h2>Select Countries</h2>
+
+            <p>
+                Click one or two countries on the map.
+                Click a selected country again to remove it.
+            </p>
+
+            <div id="map"></div>
+
+            <p
+                id="mapMessage"
+                aria-live="polite"
+            ></p>
+
+
+            <div class="selected-countries">
+
+                <h3>Selected Countries</h3>
+
+                <div id="countryChips">
+                    <span>No countries selected</span>
+                </div>
+
+                <button
+                    id="clearCountriesButton"
+                    type="button"
+                >
+                    Clear Countries
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             TOPICS
+             ========================= -->
+
+        <section class="topics-section">
+
+            <h2>Topics</h2>
+
+            <div
+                id="topicButtons"
+                class="topic-buttons"
+            >
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="security"
+                >
+                    Security
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="politics"
+                >
+                    Politics
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="economy"
+                >
+                    Economy
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="trade"
+                >
+                    Trade
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="technology"
+                >
+                    Technology
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="health"
+                >
+                    Health
+                </button>
+
+                <button
+                    type="button"
+                    class="topic-button"
+                    data-topic="energy"
+                >
+                    Energy
+                </button>
+
+                <button
+    id="clearTopicButton"
+    type="button"
+>
+    Clear Topic
+</button>
+
+            </div>
+
+
+            <!-- CUSTOM TOPIC -->
+
+            <div class="custom-topic">
+
+                <h3>Search Another Topic</h3>
+
+                <input
+                    id="customTopicInput"
+                    type="text"
+                    placeholder="e.g. solar energy, immigration, AI"
+                    autocomplete="off"
+                >
+
+                <button
+                    id="customSearchButton"
+                    type="button"
+                >
+                    Search
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             SEARCH ACTIONS
+             ========================= -->
+
+        <section class="search-actions">
+
+            <button
+                id="saveSearchButton"
+                type="button"
+            >
+                Save Search
+            </button>
+
+            <button
+                id="copyLinkButton"
+                type="button"
+            >
+                Copy Search Link
+            </button>
+
+            <p
+                id="actionMessage"
+                aria-live="polite"
+            ></p>
+
+        </section>
+
+
+
+        <!-- =========================
+             NEWS
+             ========================= -->
+
+        <section class="news-section">
+
+            <h2>News</h2>
+
+            <p
+                id="status"
+                aria-live="polite"
+            >
+                Select a country and a topic
+            </p>
+
+            <div
+                id="countryTabs"
+                class="country-tabs"
+                hidden
+            ></div>
+
+            <div id="news"></div>
+
+        </section>
+
+
+
+        <!-- =========================
+             SAVED SEARCHES
+             ========================= -->
+
+        <section class="saved-searches-section">
+
+            <h2>Saved Searches</h2>
+
+            <div id="savedSearches">
+                <p>No saved searches yet.</p>
+            </div>
+
+        </section>
+
+    </main>
+
 
 
     <script>
 
-        async function getNews() {
+        /* =========================
+           APP STATE
+           ========================= */
 
-            try {
+        const MAX_COUNTRIES = 2;
 
-                const response = await fetch("/api/news");
+        const STORAGE_KEY =
+            "globalumeSavedSearches";
 
-                const data = await response.json();
+        let selectedCountries = [];
 
-                console.log(data);
+        let selectedTopic = "";
 
-                const articles =
-                    data.news_results || [];
+        let allArticles = [];
 
+        let activeCountryFilter = "all";
 
-                document.getElementById("status")
-                    .textContent =
-                    `Received ${articles.length} articles`;
+        let map;
 
-
-                const news =
-                    document.getElementById("news");
+        let geocoder;
 
 
-                articles.forEach(article => {
 
-                    news.innerHTML += `
-                        <hr>
+        /* =========================
+           PAGE ELEMENTS
+           ========================= */
 
-                        <h2>
-                            ${article.title}
-                        </h2>
+        const countryChips =
+            document.getElementById("countryChips");
 
-                        <p>
-                            ${article.source?.name || ""}
-                        </p>
+        const mapMessage =
+            document.getElementById("mapMessage");
 
-                        <a
-                            href="${article.link}"
-                            target="_blank"
-                        >
-                            Read article
-                        </a>
-                    `;
+        const clearCountriesButton =
+            document.getElementById("clearCountriesButton");
 
-                });
+        const topicButtons =
+            document.querySelectorAll(".topic-button");
 
-            } catch (error) {
+        const customTopicInput =
+            document.getElementById("customTopicInput");
 
-                document.getElementById("status")
-                    .textContent =
-                    "Error: " + error.message;
+        const customSearchButton =
+            document.getElementById("customSearchButton");
 
-            }
+        const saveSearchButton =
+            document.getElementById("saveSearchButton");
 
+        const copyLinkButton =
+            document.getElementById("copyLinkButton");
+
+        const actionMessage =
+            document.getElementById("actionMessage");
+
+        const status =
+            document.getElementById("status");
+
+        const countryTabs =
+            document.getElementById("countryTabs");
+
+        const news =
+            document.getElementById("news");
+
+        const savedSearches =
+            document.getElementById("savedSearches");
+
+
+
+        /* =========================
+           GOOGLE MAP
+           ========================= */
+
+        function initMap() {
+
+            map =
+                new google.maps.Map(
+                    document.getElementById("map"),
+                    {
+                        center: {
+                            lat: 20,
+                            lng: 0
+                        },
+
+                        zoom: 2,
+
+                        mapTypeControl: false,
+
+                        streetViewControl: false
+                    }
+                );
+
+
+            geocoder =
+                new google.maps.Geocoder();
+
+
+            map.addListener(
+                "click",
+                async function(event) {
+
+                    mapMessage.textContent =
+                        "Finding country...";
+
+                    try {
+
+                        const response =
+                            await geocoder.geocode({
+                                location: event.latLng
+                            });
+
+
+                        const country =
+                            findCountry(
+                                response.results
+                            );
+
+
+                        if (!country) {
+
+                            mapMessage.textContent =
+                                "No country found at that location.";
+
+                            return;
+                        }
+
+
+                        toggleCountry(country);
+
+                    } catch (error) {
+
+                        console.error(error);
+
+                        mapMessage.textContent =
+                            "Could not identify that country.";
+                    }
+                }
+            );
         }
 
 
-        getNews();
+
+        function findCountry(results) {
+
+            for (const result of results) {
+
+                const component =
+                    result.address_components.find(
+                        item =>
+                            item.types.includes("country")
+                    );
+
+
+                if (component) {
+                    return component.long_name;
+                }
+            }
+
+
+            return null;
+        }
+
+
+
+        /* =========================
+           COUNTRY SELECTION
+           ========================= */
+
+        function toggleCountry(country) {
+
+            const index =
+                selectedCountries.indexOf(country);
+
+
+            /*
+                Click selected country
+                again = remove it
+            */
+
+            if (index !== -1) {
+
+                selectedCountries.splice(
+                    index,
+                    1
+                );
+
+                mapMessage.textContent =
+                    `${country} removed`;
+
+            } else {
+
+                /*
+                    Maximum 2 countries
+                */
+
+                if (
+                    selectedCountries.length
+                    >= MAX_COUNTRIES
+                ) {
+
+                    mapMessage.textContent =
+                        "Maximum two countries. Remove one first.";
+
+                    return;
+                }
+
+
+                selectedCountries.push(country);
+
+                mapMessage.textContent =
+                    `${country} selected`;
+            }
+
+
+            activeCountryFilter =
+                "all";
+
+            renderCountryChips();
+
+            renderCountryTabs();
+
+            updateUrl();
+        }
+
+
+
+        function removeCountry(country) {
+
+            selectedCountries =
+                selectedCountries.filter(
+                    item =>
+                        item !== country
+                );
+
+
+            activeCountryFilter =
+                "all";
+
+            renderCountryChips();
+
+            renderCountryTabs();
+
+            updateUrl();
+
+            mapMessage.textContent =
+                `${country} removed`;
+        }
+
+
+
+        function clearCountries() {
+
+            selectedCountries = [];
+
+            activeCountryFilter =
+                "all";
+
+            renderCountryChips();
+
+            renderCountryTabs();
+
+            updateUrl();
+
+            mapMessage.textContent =
+                "Countries cleared";
+        }
+
+
+
+        function renderCountryChips() {
+
+            countryChips.innerHTML =
+                "";
+
+
+            if (
+                selectedCountries.length
+                === 0
+            ) {
+
+                countryChips.innerHTML =
+                    "<span>No countries selected</span>";
+
+                return;
+            }
+
+
+            selectedCountries.forEach(
+                country => {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+                    button.type =
+                        "button";
+
+                    button.className =
+                        "country-chip";
+
+                    button.textContent =
+                        `${country} ×`;
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+                            removeCountry(country);
+                        }
+                    );
+
+
+                    countryChips.appendChild(
+                        button
+                    );
+                }
+            );
+        }
+
+
+
+        clearCountriesButton.addEventListener(
+            "click",
+            clearCountries
+        );
+
+
+
+        /* =========================
+           TOPIC BUTTONS
+           ========================= */
+
+        topicButtons.forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    function() {
+
+                        selectTopic(
+                            button.dataset.topic
+                        );
+
+                        getNews();
+                    }
+                );
+            }
+        );
+
+
+
+        function selectTopic(topic) {
+
+            selectedTopic =
+                topic.trim();
+
+
+            customTopicInput.value =
+                "";
+
+
+            topicButtons.forEach(
+                button => {
+
+                    const active =
+                        button.dataset.topic
+                        === selectedTopic;
+
+
+                    button.classList.toggle(
+                        "active",
+                        active
+                    );
+                }
+            );
+
+
+            updateUrl();
+        }
+
+
+
+        /* =========================
+           CUSTOM TOPIC
+           ========================= */
+
+        function searchCustomTopic() {
+
+            const topic =
+                customTopicInput.value
+                    .trim();
+
+
+            if (!topic) {
+
+                status.textContent =
+                    "Enter a topic first";
+
+                return;
+            }
+
+
+            selectedTopic =
+                topic;
+
+
+            topicButtons.forEach(
+                button => {
+
+                    button.classList.remove(
+                        "active"
+                    );
+                }
+            );
+
+
+            updateUrl();
+
+            getNews();
+        }
+
+
+
+        customSearchButton.addEventListener(
+            "click",
+            searchCustomTopic
+        );
+
+
+
+        customTopicInput.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (
+                    event.key
+                    === "Enter"
+                ) {
+
+                    searchCustomTopic();
+                }
+            }
+        );
+
+
+
+        /* =========================
+           GET NEWS
+           ========================= */
+
+        async function getNews() {
+
+            if (
+                selectedCountries.length
+                === 0
+            ) {
+
+                status.textContent =
+                    "Please select at least one country";
+
+                return;
+            }
+
+
+            if (!selectedTopic) {
+
+                status.textContent =
+                    "Please select or enter a topic";
+
+                return;
+            }
+
+
+            status.textContent =
+                `Searching ${selectedCountries.join(" + ")} for ${selectedTopic}...`;
+
+
+            news.innerHTML =
+                "";
+
+
+            countryTabs.hidden =
+                true;
+
+
+            activeCountryFilter =
+                "all";
+
+
+            updateUrl();
+
+
+            try {
+
+                const countries =
+                    selectedCountries.join(",");
+
+
+                const response =
+                    await fetch(
+
+                        `/api/news?countries=${encodeURIComponent(countries)}&topic=${encodeURIComponent(selectedTopic)}`
+
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const articles =
+                    Array.isArray(
+                        data.news_results
+                    )
+                    ? data.news_results
+                    : [];
+
+
+                allArticles =
+                    removeDuplicates(
+                        articles
+                    );
+
+
+                if (
+                    allArticles.length
+                    === 0
+                ) {
+
+                    status.textContent =
+                        `No news found for ${selectedCountries.join(" + ")} and ${selectedTopic}.`;
+
+                    news.innerHTML =
+                        "<p>Try another country or topic.</p>";
+
+                    return;
+                }
+
+
+                status.textContent =
+                    `Found ${allArticles.length} articles`;
+
+
+                renderCountryTabs();
+
+                renderArticles(
+                    allArticles
+                );
+
+                /*
+                    Scroll to the news
+                    after it has loaded
+                */
+
+                document
+                    .querySelector(
+                        ".news-section"
+                    )
+                    .scrollIntoView({
+
+                        behavior: "smooth",
+
+                        block: "start"
+
+                    });
+            } catch (error) {
+
+                console.error(error);
+
+
+                status.textContent =
+                    "Could not load news. Please try again.";
+
+
+                news.innerHTML =
+                    "<p>An error occurred while loading the news.</p>";
+            }
+        }
+
+
+
+        /* =========================
+           DUPLICATE REMOVAL
+           ========================= */
+
+        function removeDuplicates(articles) {
+
+            const seenTitles =
+                new Set();
+
+            const seenLinks =
+                new Set();
+
+
+            return articles.filter(
+                article => {
+
+                    const title =
+                        normalizeText(
+                            article.title || ""
+                        );
+
+
+                    const link =
+                        (
+                            article.link || ""
+                        )
+                        .trim()
+                        .toLowerCase();
+
+
+                    if (
+                        !title
+                        && !link
+                    ) {
+
+                        return false;
+                    }
+
+
+                    if (
+                        title
+                        && seenTitles.has(title)
+                    ) {
+
+                        return false;
+                    }
+
+
+                    if (
+                        link
+                        && seenLinks.has(link)
+                    ) {
+
+                        return false;
+                    }
+
+
+                    if (title) {
+                        seenTitles.add(title);
+                    }
+
+
+                    if (link) {
+                        seenLinks.add(link);
+                    }
+
+
+                    return true;
+                }
+            );
+        }
+
+
+
+        function normalizeText(text) {
+
+            return String(text)
+                .toLowerCase()
+                .replace(
+                    /[^a-z0-9\s]/g,
+                    ""
+                )
+                .replace(
+                    /\s+/g,
+                    " "
+                )
+                .trim();
+        }
+
+
+
+        /* =========================
+           COUNTRY COMPARISON
+           ========================= */
+
+        function renderCountryTabs() {
+
+            countryTabs.innerHTML =
+                "";
+
+
+            /*
+                Comparison tabs only
+                appear when 2 countries
+                are selected.
+            */
+
+            if (
+                selectedCountries.length
+                !== 2
+            ) {
+
+                countryTabs.hidden =
+                    true;
+
+                return;
+            }
+
+
+            countryTabs.hidden =
+                false;
+
+
+            const filters = [
+                "all",
+                ...selectedCountries
+            ];
+
+
+            filters.forEach(
+                filter => {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    button.type =
+                        "button";
+
+                    button.className =
+                        "country-tab";
+
+                    button.textContent =
+                        filter === "all"
+                        ? "All"
+                        : filter;
+
+
+                    if (
+                        activeCountryFilter
+                        === filter
+                    ) {
+
+                        button.classList.add(
+                            "active"
+                        );
+                    }
+
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+
+                            activeCountryFilter =
+                                filter;
+
+                            renderCountryTabs();
+
+                            filterArticlesByCountry();
+                        }
+                    );
+
+
+                    countryTabs.appendChild(
+                        button
+                    );
+                }
+            );
+        }
+
+
+
+        function filterArticlesByCountry() {
+
+            if (
+                activeCountryFilter
+                === "all"
+            ) {
+
+                status.textContent =
+                    `Found ${allArticles.length} articles`;
+
+                renderArticles(
+                    allArticles
+                );
+
+                
+                return;
+            }
+
+
+            const country =
+                normalizeText(
+                    activeCountryFilter
+                );
+
+
+            const filtered =
+                allArticles.filter(
+                    article => {
+
+                        const text =
+                            normalizeText(
+                                `${article.title || ""} ${article.snippet || ""}`
+                            );
+
+
+                        return text.includes(
+                            country
+                        );
+                    }
+                );
+
+
+            status.textContent =
+                `${filtered.length} articles mentioning ${activeCountryFilter}`;
+
+
+            if (
+                filtered.length
+                === 0
+            ) {
+
+                news.innerHTML =
+                    `<p>No returned articles mention ${escapeHtml(activeCountryFilter)} in the title or snippet.</p>`;
+
+                return;
+            }
+
+
+            renderArticles(
+                filtered
+            );
+        }
+
+
+
+        /* =========================
+           NEWS CARDS
+           ========================= */
+
+        function renderArticles(articles) {
+
+            news.innerHTML =
+                "";
+
+
+            articles.forEach(
+                article => {
+
+                    const card =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    card.className =
+                        "article";
+
+
+                    const title =
+                        article.title
+                        || "Untitled article";
+
+
+                    const source =
+                        getSourceName(
+                            article.source
+                        );
+
+
+                    const date =
+                        article.date
+                        || "";
+
+
+                    const snippet =
+                        article.snippet
+                        || "";
+
+
+                    const link =
+                        article.link
+                        || "";
+
+
+                    const image =
+                        article.thumbnail
+                        || "";
+
+
+                    card.innerHTML = `
+
+                        ${
+                            image
+                            ? `
+                                <img
+                                    class="article-image"
+                                    src="${escapeHtml(image)}"
+                                    alt="${escapeHtml(title)}"
+                                    loading="lazy"
+                                >
+                            `
+                            : ""
+                        }
+
+                        <div class="article-content">
+
+                            <h3>
+                                ${escapeHtml(title)}
+                            </h3>
+
+                            <div class="article-meta">
+
+                                ${
+                                    source
+                                    ? `
+                                        <span>
+                                            ${escapeHtml(source)}
+                                        </span>
+                                    `
+                                    : ""
+                                }
+
+                                ${
+                                    date
+                                    ? `
+                                        <span>
+                                            ${escapeHtml(date)}
+                                        </span>
+                                    `
+                                    : ""
+                                }
+
+                            </div>
+
+                            ${
+                                snippet
+                                ? `
+                                    <p>
+                                        ${escapeHtml(snippet)}
+                                    </p>
+                                `
+                                : ""
+                            }
+
+                            ${
+                                link
+                                ? `
+                                    <a
+                                        href="${escapeHtml(link)}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Read article
+                                    </a>
+                                `
+                                : ""
+                            }
+
+                        </div>
+
+                    `;
+
+
+                    news.appendChild(card);
+                }
+            );
+        }
+
+
+
+        function getSourceName(source) {
+
+            if (!source) {
+                return "";
+            }
+
+
+            if (
+                typeof source
+                === "string"
+            ) {
+
+                return source;
+            }
+
+
+            if (
+                typeof source
+                === "object"
+            ) {
+
+                return source.name
+                    || source.title
+                    || "";
+            }
+
+
+            return String(source);
+        }
+
+
+
+        /* =========================
+           SHAREABLE SEARCH URL
+           ========================= */
+
+        function updateUrl() {
+
+            const url =
+                new URL(
+                    window.location.href
+                );
+
+
+            if (
+                selectedCountries.length
+                > 0
+            ) {
+
+                url.searchParams.set(
+                    "countries",
+                    selectedCountries.join(",")
+                );
+
+            } else {
+
+                url.searchParams.delete(
+                    "countries"
+                );
+            }
+
+
+            if (selectedTopic) {
+
+                url.searchParams.set(
+                    "topic",
+                    selectedTopic
+                );
+
+            } else {
+
+                url.searchParams.delete(
+                    "topic"
+                );
+            }
+
+
+            window.history.replaceState(
+                {},
+                "",
+                url
+            );
+        }
+
+
+
+        function restoreFromUrl() {
+
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+
+            const countries =
+                params.get("countries");
+
+
+            const topic =
+                params.get("topic");
+
+
+            if (countries) {
+
+                selectedCountries =
+                    countries
+                        .split(",")
+                        .map(
+                            country =>
+                                country.trim()
+                        )
+                        .filter(Boolean)
+                        .slice(
+                            0,
+                            MAX_COUNTRIES
+                        );
+            }
+
+
+            if (topic) {
+
+                selectedTopic =
+                    topic.trim();
+            }
+
+
+            renderCountryChips();
+
+            restoreTopicState();
+        }
+
+
+
+        function restoreTopicState() {
+
+            let presetFound =
+                false;
+
+
+            topicButtons.forEach(
+                button => {
+
+                    const active =
+                        button.dataset.topic
+                        .toLowerCase()
+                        === selectedTopic
+                        .toLowerCase();
+
+
+                    button.classList.toggle(
+                        "active",
+                        active
+                    );
+
+
+                    if (active) {
+
+                        presetFound =
+                            true;
+                    }
+                }
+            );
+
+
+            if (
+                selectedTopic
+                && !presetFound
+            ) {
+
+                customTopicInput.value =
+                    selectedTopic;
+
+            } else {
+
+                customTopicInput.value =
+                    "";
+            }
+        }
+
+
+
+        copyLinkButton.addEventListener(
+            "click",
+            async function() {
+
+                if (
+                    selectedCountries.length
+                    === 0
+                    || !selectedTopic
+                ) {
+
+                    actionMessage.textContent =
+                        "Select countries and a topic first";
+
+                    return;
+                }
+
+
+                updateUrl();
+
+
+                try {
+
+                    await navigator.clipboard.writeText(
+                        window.location.href
+                    );
+
+
+                    actionMessage.textContent =
+                        "Search link copied";
+
+                } catch (error) {
+
+                    actionMessage.textContent =
+                        "Copy the URL from your browser address bar.";
+                }
+            }
+        );
+
+
+
+        /* =========================
+           SAVED SEARCHES
+           ========================= */
+
+        function getSavedSearches() {
+
+            try {
+
+                const data =
+                    JSON.parse(
+                        localStorage.getItem(
+                            STORAGE_KEY
+                        )
+                        || "[]"
+                    );
+
+
+                return Array.isArray(data)
+                    ? data
+                    : [];
+
+            } catch (error) {
+
+                return [];
+            }
+        }
+
+
+
+        function setSavedSearches(searches) {
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(
+                    searches
+                )
+            );
+        }
+
+
+
+        function saveCurrentSearch() {
+
+            if (
+                selectedCountries.length
+                === 0
+                || !selectedTopic
+            ) {
+
+                actionMessage.textContent =
+                    "Select countries and a topic before saving";
+
+                return;
+            }
+
+
+            const saved =
+                getSavedSearches();
+
+
+            const newSearch = {
+
+                countries:
+                    [...selectedCountries],
+
+                topic:
+                    selectedTopic
+            };
+
+
+            const exists =
+                saved.some(
+                    item =>
+
+                        item.topic.toLowerCase()
+                        === newSearch.topic.toLowerCase()
+
+                        &&
+
+                        item.countries.join("|")
+                        === newSearch.countries.join("|")
+                );
+
+
+            if (exists) {
+
+                actionMessage.textContent =
+                    "This search is already saved";
+
+                return;
+            }
+
+
+            saved.push(newSearch);
+
+            setSavedSearches(saved);
+
+            renderSavedSearches();
+
+
+            actionMessage.textContent =
+                "Search saved";
+        }
+
+
+
+        saveSearchButton.addEventListener(
+            "click",
+            saveCurrentSearch
+        );
+
+
+
+        function renderSavedSearches() {
+
+            const saved =
+                getSavedSearches();
+
+
+            savedSearches.innerHTML =
+                "";
+
+
+            if (
+                saved.length
+                === 0
+            ) {
+
+                savedSearches.innerHTML =
+                    "<p>No saved searches yet.</p>";
+
+                return;
+            }
+
+
+            saved.forEach(
+                (item, index) => {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "saved-search";
+
+
+                    const label =
+                        document.createElement(
+                            "span"
+                        );
+
+
+                    label.textContent =
+                        `${item.countries.join(" + ")} — ${item.topic}`;
+
+
+                    const openButton =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    openButton.type =
+                        "button";
+
+                    openButton.textContent =
+                        "Open";
+
+
+                    openButton.addEventListener(
+                        "click",
+                        function() {
+
+                            selectedCountries =
+                                [...item.countries]
+                                .slice(
+                                    0,
+                                    MAX_COUNTRIES
+                                );
+
+
+                            selectedTopic =
+                                item.topic;
+
+
+                            activeCountryFilter =
+                                "all";
+
+
+                            renderCountryChips();
+
+                            restoreTopicState();
+
+                            updateUrl();
+
+                            getNews();
+                        }
+                    );
+
+
+                    const removeButton =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    removeButton.type =
+                        "button";
+
+                    removeButton.textContent =
+                        "Remove";
+
+
+                    removeButton.addEventListener(
+                        "click",
+                        function() {
+
+                            const updated =
+                                getSavedSearches();
+
+
+                            updated.splice(
+                                index,
+                                1
+                            );
+
+
+                            setSavedSearches(
+                                updated
+                            );
+
+
+                            renderSavedSearches();
+                        }
+                    );
+
+
+                    row.appendChild(label);
+
+                    row.appendChild(
+                        openButton
+                    );
+
+                    row.appendChild(
+                        removeButton
+                    );
+
+
+                    savedSearches.appendChild(
+                        row
+                    );
+                }
+            );
+        }
+
+
+
+        /* =========================
+           SAFE OUTPUT
+           ========================= */
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replaceAll(
+                    "&",
+                    "&amp;"
+                )
+                .replaceAll(
+                    "<",
+                    "&lt;"
+                )
+                .replaceAll(
+                    ">",
+                    "&gt;"
+                )
+                .replaceAll(
+                    '"',
+                    "&quot;"
+                )
+                .replaceAll(
+                    "'",
+                    "&#039;"
+                );
+        }
+
+
+
+        /* =========================
+           START APP
+           ========================= */
+
+        restoreFromUrl();
+
+        renderSavedSearches();
+
+        renderCountryTabs();
+
+
+        /*
+            Shared URLs automatically
+            load their news.
+        */
+
+        if (
+            selectedCountries.length > 0
+            && selectedTopic
+        ) {
+
+            getNews();
+        }
+
+        const clearTopicButton =
+    document.getElementById(
+        "clearTopicButton"
+    );
+
+
+clearTopicButton.addEventListener(
+    "click",
+    function() {
+
+        selectedTopic = "";
+
+
+        customTopicInput.value =
+            "";
+
+
+        topicButtons.forEach(
+            button => {
+
+                button.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+        updateUrl();
+
+
+        status.textContent =
+            "Select a country and a topic";
+
+    }
+);
 
     </script>
+
+
+
+    <!-- =========================
+         GOOGLE MAPS
+
+         Replace the placeholder with
+         your existing working key.
+         ========================= -->
+
+    <script
+        async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4kWYu9n7sW-if714qh1iRjgEZo1l_28Q&loading=async&callback=initMap">
+    </script>
+
 
 </body>
 

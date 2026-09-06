@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Google Maps News Panel</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #map {
+            width: 70%;
+            height: 500px;
+        }
+
+        #newsPanel {
+            width: 30%;
+            min-height: 500px;
+
+            padding: 20px;
+
+            border: 1px solid #ddd;
+            border-radius: 10px;
+
+            box-sizing: border-box;
+        }
+
+        #closePanel {
+            float: right;
+
+            border: none;
+            background: none;
+
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #newsPanel h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1 style="text-align:center;">
+        Global News Map
+    </h1>
+
+
+    <div class="container">
+
+        <!-- GOOGLE MAP -->
+        <div id="map"></div>
+
+
+        <!-- SEPARATE NEWS PANEL -->
+        <div id="newsPanel">
+
+            <button id="closePanel">
+                ✕
+            </button>
+
+            <h2 id="panelTitle">
+                Select a location
+            </h2>
+
+            <h3 id="panelHeadline">
+                Click a marker on the map
+            </h3>
+
+            <p id="panelSource"></p>
+
+            <a
+                id="panelLink"
+                href="#"
+                target="_blank"
+                class="hidden"
+            >
+                Read article
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        async function initMap() {
+
+            const { Map } =
+                await google.maps.importLibrary("maps");
+
+            const { AdvancedMarkerElement } =
+                await google.maps.importLibrary("marker");
+
+
+            const locations = [
+
+                {
+                    name: "Pakistan",
+
+                    lat: 30.3753,
+                    lng: 69.3451,
+
+                    headline:
+                        "Pakistan and China discuss new energy cooperation",
+
+                    source:
+                        "Example News",
+
+                    url:
+                        "https://example.com"
+                },
+
+
+                {
+                    name: "China",
+
+                    lat: 35.8617,
+                    lng: 104.1954,
+
+                    headline:
+                        "China expands investment in Pakistan energy projects",
+
+                    source:
+                        "Example News",
+
+                    url:
+                        "https://example.com"
+                }
+
+            ];
+
+
+            const map = new Map(
+                document.getElementById("map"),
+                {
+                    center: {
+                        lat: 33,
+                        lng: 85
+                    },
+
+                    zoom: 4,
+
+                    mapId: "DEMO_MAP_ID"
+                }
+            );
+
+
+            const panel = document.getElementById("newsPanel");
+
+            const panelTitle =
+                document.getElementById("panelTitle");
+
+            const panelHeadline =
+                document.getElementById("panelHeadline");
+
+            const panelSource =
+                document.getElementById("panelSource");
+
+            const panelLink =
+                document.getElementById("panelLink");
+
+            const closePanel =
+                document.getElementById("closePanel");
+
+
+            locations.forEach(location => {
+
+                const marker =
+                    new AdvancedMarkerElement({
+
+                        map: map,
+
+                        position: {
+                            lat: location.lat,
+                            lng: location.lng
+                        },
+
+                        title: location.name,
+
+                        gmpClickable: true
+                    });
+
+
+                marker.addEventListener(
+                    "gmp-click",
+                    () => {
+
+                        panel.classList.remove("hidden");
+
+                        panelTitle.textContent =
+                            location.name;
+
+                        panelHeadline.textContent =
+                            location.headline;
+
+                        panelSource.textContent =
+                            "Source: " + location.source;
+
+                        panelLink.href =
+                            location.url;
+
+                        panelLink.classList.remove("hidden");
+
+                    }
+                );
+
+            });
+
+
+            closePanel.addEventListener(
+                "click",
+                () => {
+
+                    panel.classList.add("hidden");
+
+                }
+            );
+
+        }
+
+    </script>
+
+
+    <script
+        async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4kWYu9n7sW-if714qh1iRjgEZo1l_28Q&loading=async&callback=initMap">
+    </script>
+
+</body>
+
+</html>
